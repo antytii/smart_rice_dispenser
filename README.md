@@ -21,9 +21,9 @@ Smart Rice Dispenser (ATM Beras) adalah sistem berbasis IoT (Internet of Things)
 
 | Minggu | Periode | Kegiatan | Penanggung Jawab |
 |---------|----------|----------------|------------------|
-| 1 | 28 – 30 Okt 2025 | Laporan proyek, manajemen risiko & timeline | Siti Hajar (PM) |
-| 2 | 04 – 08 Nov 2025 | API, database cloud & keamanan data | Andi Syahkty (BE DEV) |
-| 3 | 10 – 13 Nov 2025 | Dashboard monitoring & UI transaksi | Fitrah Azizah (FE DEV) |
-| 4 | 17 – 21 Nov 2025 | Firmware ESP32/Pi, Integrasi RFID & Sensor | Hajera (IOT DEV) |
-| 5 | 24 – 27 Nov 2025 | Perakitan Fisik, Mekanik Dispenser & Powering | Eka Putri & Al-Faraby (Hardware Engineer) |
-| 6 | 01 - 04 Des 2025 | Testing, debugging, finalisasi dokumentasi dan SRS | Fitrah Azizah |
+| 1 | 28 – 30 Mar 2025 | Laporan proyek, manajemen risiko & timeline | Siti Hajar (PM) |
+| 2 | 04 – 08 Apr 2025 | API, database cloud & keamanan data | Andi Syahkty (BE DEV) |
+| 3 | 10 – 13 Apr 2025 | Dashboard monitoring & UI transaksi | Fitrah Azizah (FE DEV) |
+| 4 | 17 – 21 Apr 2025 | Firmware ESP32/Pi, Integrasi RFID & Sensor | Hajera (IOT DEV) |
+| 5 | 24 – 27 Apr 2025 | Perakitan Fisik, Mekanik Dispenser & Powering | Eka Putri & Al-Faraby (Hardware Engineer) |
+| 6 | 01 - 04 Mei 2025 | Testing, debugging, finalisasi dokumentasi dan SRS | Fitrah Azizah |
