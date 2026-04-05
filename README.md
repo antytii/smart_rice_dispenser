@@ -14,19 +14,16 @@
 | SITI HAJAR | F55123063 |
 
 ## 📚 Deskripsi Proyek
-SIAKAD (Sistem Informasi Akademik) adalah website untuk mengelola data akademik di perguruan tinggi. Sistem ini dirancang untuk memfasilitasi pengelolaan data mahasiswa, dosen, mata kuliah, jadwal kuliah, KRS (Kartu Rencana Studi), dan absensi secara efisien, transparan, dan mudah diakses oleh seluruh civitas akademika.
+Smart Rice Dispenser (ATM Beras) adalah sistem berbasis IoT (Internet of Things) yang dirancang untuk mendigitalisasi proses distribusi bantuan sosial beras agar lebih tepat sasaran. Sistem ini mengintegrasikan mikrokontroler dengan teknologi RFID dan Cloud Database untuk menggantikan sistem kupon manual, sehingga mampu meminimalisir risiko manipulasi data dan memberikan laporan penyaluran yang transparan dan real-time bagi perangkat desa atau pengelola zakat.
 
 ## 🗓 Timeline Proyek SMART RICE DISPENSER
 *Universitas Tadulako — Proyek Inovasi Digital*
 
 | Minggu | Periode | Kegiatan | Penanggung Jawab |
 |---------|----------|----------------|------------------|
-| 1 | 28 – 30 Okt 2025 | Persiapan proyek, pembuatan repository, pembagian tugas | Anggita (PM) |
-| 2 | 04 – 08 Nov 2025 | Pembuatan ERD dan desain UI/UX | Ifal (ERD), Wanti (UI/UX) |
-| 3 | 10 – 13 Nov 2025 | Implementasi awal login multi user & dashboard, setup struktur proyek | Siti (Frontend), Asfita (Database), Sifa (Backend) |
-| 4 | 17 – 21 Nov 2025 | Melakukan integrasi antara frontend, backend, dan database untuk membangun fitur CRUD pada menu admin. | Siti (Frontend), Asfita (Database), Sifa (Backend) |
-| 5 | 24 – 27 Nov 2025 | Melakukan integrasi antara frontend, backend, dan database untuk membangun fitur CRUD pada menu dosen dan mahasiswa. | Siti (Frontend), Asfita (Database), Sifa (Backend) |
-| 6 | 01 - 04 Des 2025 | Testing, debugging, finalisasi dokumentasi dan SRS | Seluruh Anggota |
-
-
-
+| 1 | 28 – 30 Okt 2025 | Laporan proyek, manajemen risiko & timeline | Siti Hajar (PM) |
+| 2 | 04 – 08 Nov 2025 | API, database cloud & keamanan data | Andi Syahkty (BE DEV) |
+| 3 | 10 – 13 Nov 2025 | Dashboard monitoring & UI transaksi | Fitrah Azizah (FE DEV) |
+| 4 | 17 – 21 Nov 2025 | Firmware ESP32/Pi, Integrasi RFID & Sensor | Hajera (IOT DEV) |
+| 5 | 24 – 27 Nov 2025 | Perakitan Fisik, Mekanik Dispenser & Powering | Eka Putri & Al-Faraby (Hardware Engineer) |
+| 6 | 01 - 04 Des 2025 | Testing, debugging, finalisasi dokumentasi dan SRS | Fitrah Azizah |
