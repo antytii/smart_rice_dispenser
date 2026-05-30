@@ -4,28 +4,14 @@ declare(strict_types=1);
 
 return [
     /*
-     * ------------------------------------------------------------------------
-     * Firebase Credentials
-     * ------------------------------------------------------------------------
-     *
      * Path ke file Service Account JSON dari Firebase Console.
-     * Download dari: Firebase Console > Project Settings > Service Accounts
-     *
+     * Letakkan file di: storage/app/firebase/service-account.json
      */
-    'credentials' => [
-        'file' => env('FIREBASE_CREDENTIALS', storage_path('app/firebase/service-account.json')),
-    ],
+    'credentials' => env('FIREBASE_CREDENTIALS', 'storage/app/firebase/service-account.json'),
 
     /*
-     * ------------------------------------------------------------------------
-     * Firebase Realtime Database URL
-     * ------------------------------------------------------------------------
-     *
-     * URL Realtime Database kamu.
-     * Contoh: https://your-project-id-default-rtdb.asia-southeast1.firebasedatabase.app
-     *
+     * URL Firebase Realtime Database project kamu.
+     * Contoh: https://nama-project-default-rtdb.asia-southeast1.firebasedatabase.app
      */
-    'database' => [
-        'url' => env('FIREBASE_DATABASE_URL'),
-    ],
+    'database_url' => env('FIREBASE_DATABASE_URL', ''),
 ];

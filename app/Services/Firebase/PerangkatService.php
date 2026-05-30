@@ -3,11 +3,26 @@
 namespace App\Services\Firebase;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
+/**
+ * Service untuk operasi Perangkat di Firebase Realtime Database.
+ * Menggantikan Eloquent Model Perangkat.
+ * 
+ * Struktur Firebase:
+ * perangkats/
+ *   {id_alat}/
+ *     sisa_stok_beras: float
+ *     persentase_stok: float
+ *     status_alat: "Online"|"Offline"
+ *     last_ping: string (ISO8601) <- untuk deteksi offline otomatis
+ */
 class PerangkatService
 {
     protected FirebaseService $firebase;
     protected string $path = 'perangkats';
+    protected string $cacheKey = 'firebase_perangkats';
+    protected int $cacheTtl = 60; // 60 detik (data IoT sering update)
 
     public function __construct(FirebaseService $firebase)
     {
@@ -15,88 +30,98 @@ class PerangkatService
     }
 
     /**
-     * Cari perangkat berdasarkan ID alat (primary key)
+     * Ambil semua perangkat, dengan status_alat dihitung otomatis
      */
-    public function findById(string $idAlat): ?array
+    public function all(): array
     {
-        $snapshot = $this->firebase->getReference("{$this->path}/{$idAlat}")->getSnapshot();
+        return Cache::remember($this->cacheKey, $this->cacheTtl, function () {
+            $data = $this->firebase->get($this->path);
+            if (!$data) return [];
 
-        if (!$snapshot->exists()) {
-            return null;
-        }
-
-        $data = $snapshot->getValue();
-        $data['id_alat'] = $idAlat;
-        return $data;
-    }
-
-    /**
-     * Ambil semua perangkat + hitung status online/offline
-     */
-    public function getAll(): array
-    {
-        $snapshot = $this->firebase->getReference($this->path)->getSnapshot();
-
-        if (!$snapshot->exists()) {
-            return [];
-        }
-
-        $perangkats = [];
-        foreach ($snapshot->getValue() as $id => $data) {
-            $data['id_alat'] = $id;
-
-            // Hitung status: jika updated_at > 60 detik lalu => Offline
-            if (isset($data['updated_at'])) {
-                $lastUpdate = Carbon::createFromTimestamp($data['updated_at']);
-                $isOnline = $lastUpdate->diffInSeconds(now()) < 60;
-                $data['status_alat'] = $isOnline ? 'Online' : 'Offline';
-                $data['updated_at_human'] = $lastUpdate->diffForHumans();
-            } else {
-                $data['status_alat'] = 'Offline';
-                $data['updated_at_human'] = 'Belum pernah aktif';
+            $result = [];
+            foreach ($data as $idAlat => $item) {
+                $result[] = $this->applyStatusLogic(array_merge($item, ['id_alat' => $idAlat]));
             }
-
-            $perangkats[] = $data;
-        }
-
-        return $perangkats;
+            return $result;
+        });
     }
 
     /**
-     * Buat perangkat baru
+     * Ambil satu perangkat berdasarkan id_alat
      */
-    public function create(string $idAlat, array $data): void
+    public function find(string $idAlat): ?array
     {
-        $data['updated_at'] = now()->timestamp;
-        $this->firebase->getReference("{$this->path}/{$idAlat}")->set($data);
+        $data = $this->firebase->get("{$this->path}/{$idAlat}");
+        if (!$data) return null;
+        return $this->applyStatusLogic(array_merge($data, ['id_alat' => $idAlat]));
     }
 
     /**
-     * Update data perangkat
+     * Ambil perangkat pertama (asumsi 1 alat)
      */
-    public function update(string $idAlat, array $data): void
+    public function first(): ?array
     {
-        $this->firebase->getReference("{$this->path}/{$idAlat}")->update($data);
+        $all = $this->all();
+        return count($all) > 0 ? $all[0] : null;
     }
 
     /**
-     * Update stok dan timestamp (untuk heartbeat dari ESP32)
+     * Update stok dan status perangkat (heartbeat dari ESP32)
      */
     public function updateStok(string $idAlat, float $sisaStok, float $persentase): bool
     {
-        $perangkat = $this->findById($idAlat);
+        $existing = $this->firebase->get("{$this->path}/{$idAlat}");
+        if (!$existing) return false;
 
-        if (!$perangkat) {
-            return false;
-        }
-
-        $this->update($idAlat, [
+        $this->firebase->update("{$this->path}/{$idAlat}", [
             'sisa_stok_beras' => $sisaStok,
             'persentase_stok' => $persentase,
             'status_alat' => 'Online',
-            'updated_at' => now()->timestamp, // Unix timestamp untuk perbandingan
+            'last_ping' => Carbon::now()->toIso8601String(),
         ]);
-
+        Cache::forget($this->cacheKey); // Invalidate agar status Online langsung terlihat
         return true;
+    }
+
+    /**
+     * Kurangi stok setelah transaksi berhasil
+     */
+    public function kurangiStok(string $idAlat, float $jumlah): void
+    {
+        $perangkat = $this->firebase->get("{$this->path}/{$idAlat}");
+        if (!$perangkat) return;
+
+        $sisaBaru = max(0, (float)($perangkat['sisa_stok_beras'] ?? 0) - $jumlah);
+        $persentaseBaru = ($sisaBaru / 100) * 100; // Sesuaikan logic kapasitas max
+
+        $this->firebase->update("{$this->path}/{$idAlat}", [
+            'sisa_stok_beras' => $sisaBaru,
+            'persentase_stok' => $persentaseBaru,
+            'last_ping' => Carbon::now()->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Tambahkan perangkat baru
+     */
+    public function create(string $idAlat, array $data): void
+    {
+        $data['last_ping'] = Carbon::now()->toIso8601String();
+        $this->firebase->set("{$this->path}/{$idAlat}", $data);
+    }
+
+    /**
+     * Logic otomatis: jika last_ping > 30 detik lalu, status = Offline
+     * (Menggantikan Eloquent Accessor getStatusAlatAttribute)
+     */
+    private function applyStatusLogic(array $item): array
+    {
+        if (isset($item['last_ping'])) {
+            $lastPing = Carbon::parse($item['last_ping']);
+            if ($lastPing->diffInSeconds(Carbon::now()) >= 30) {
+                $item['status_alat'] = 'Offline';
+            }
+        }
+        return $item;
     }
 }

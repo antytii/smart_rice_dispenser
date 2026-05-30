@@ -20,8 +20,9 @@ class Warga extends Model
         'nama',
         'alamat',
         'pin',
-        'jatah_lalu', // Tambahkan ini
-        'jatah_ini',  // Tambahkan ini
+        'jatah_bulanan',
+        'jatah_lalu', 
+        'jatah_ini',  
         'status'
     ];
 
@@ -29,5 +30,11 @@ class Warga extends Model
     public function transaksi()
     {
         return $this->hasMany(Transaksi::class, 'uid_kartu', 'uid_kartu');
+    }
+
+    // Relasi: Satu Warga punya banyak Jatah Bulanan
+    public function jatah_warga()
+    {
+        return $this->hasMany(JatahWarga::class, 'uid_kartu', 'uid_kartu');
     }
 }

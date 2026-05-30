@@ -7,21 +7,23 @@ use Illuminate\Http\Request;
 use App\Services\Firebase\WargaService;
 use App\Services\Firebase\TransaksiService;
 use App\Services\Firebase\PerangkatService;
+use App\Services\Firebase\JatahWargaService;
+use App\Services\Firebase\FirebaseService;
 
 class DispenserController extends Controller
 {
     protected WargaService $wargaService;
     protected TransaksiService $transaksiService;
     protected PerangkatService $perangkatService;
+    protected JatahWargaService $jatahWargaService;
 
-    public function __construct(
-        WargaService $wargaService,
-        TransaksiService $transaksiService,
-        PerangkatService $perangkatService
-    ) {
-        $this->wargaService = $wargaService;
-        $this->transaksiService = $transaksiService;
-        $this->perangkatService = $perangkatService;
+    public function __construct()
+    {
+        $firebase = new FirebaseService();
+        $this->wargaService = new WargaService($firebase);
+        $this->transaksiService = new TransaksiService($firebase);
+        $this->perangkatService = new PerangkatService($firebase);
+        $this->jatahWargaService = new JatahWargaService($firebase, $this->wargaService);
     }
 
     // 1. Fungsi saat warga TAP e-KTP
@@ -39,82 +41,97 @@ class DispenserController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Kartu tidak aktif.'], 403);
         }
 
-        // Kirim data sesuai alur baru (Step 4 & 5)
+        // Pastikan jatah bulan ini sudah ter-generate (Lazy)
+        $this->jatahWargaService->pastikanJatahBulanIniAda();
+
+        $uid = $warga['uid_kartu'];
+
+        // Jatah dari bulan-bulan lalu yang belum diambil
+        $jatahLalu = $this->jatahWargaService->totalJatahLalu($uid);
+
+        // Jatah khusus bulan ini
+        $jatahIni = $this->jatahWargaService->totalJatahIni($uid);
+
+        $totalJatah = $jatahLalu + $jatahIni;
+
+        // Pengecekan Stok Beras di Perangkat
+        $perangkat = $this->perangkatService->first();
+        if ($perangkat && $perangkat['sisa_stok_beras'] < $totalJatah && $totalJatah > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Stok Mesin Habis' // Tepat 16 karakter
+            ], 400);
+        }
+
         return response()->json([
             'status' => 'success',
             'data' => [
-                'nama' => $warga['nama'],
-                'pin' => $warga['pin'],
-                'jatah_lalu' => $warga['jatah_lalu'] ?? 0, // Kirim jatah bulan lalu
-                'jatah_ini' => $warga['jatah_ini'] ?? 0    // Kirim jatah bulan ini
+                'nama'       => $warga['nama'],
+                'pin'        => $warga['pin'],
+                'jatah_lalu' => (float) $jatahLalu,
+                'jatah_ini'  => (float) $jatahIni,
             ]
         ], 200);
     }
 
-    // 2. Fungsi setelah beras berhasil dituang (Step 9)
+    // 2. Fungsi setelah beras berhasil dituang
     public function catatTransaksi(Request $request)
     {
         $request->validate([
             'uid_kartu' => 'required|string',
-            'jumlah' => 'required|numeric', // diubah dari jumlah_diambil agar sinkron dengan ESP32
-            'id_alat' => 'required|string',
-            'tipe' => 'required|string' // "lalu" atau "ini"
+            'jumlah'    => 'required|numeric',
+            'id_alat'   => 'required|string',
+            'tipe'      => 'required|string', // "lalu" atau "ini"
         ]);
 
         $warga = $this->wargaService->findByUid($request->uid_kartu);
 
-        if ($warga) {
-            // Logika Update Jatah (Step 9)
-            if ($request->tipe == 'lalu') {
-                $this->wargaService->update($request->uid_kartu, ['jatah_lalu' => 0]);
-            } else {
-                $this->wargaService->update($request->uid_kartu, ['jatah_ini' => 0]);
-            }
-
-            // Potong stok di Firebase Perangkat
-            $perangkat = $this->perangkatService->findById($request->id_alat);
-            if ($perangkat) {
-                $sisaBaru = ($perangkat['sisa_stok_beras'] ?? 0) - $request->jumlah;
-                $persentaseBaru = ($sisaBaru / 100) * 100;
-                $this->perangkatService->update($request->id_alat, [
-                    'sisa_stok_beras' => $sisaBaru,
-                    'persentase_stok' => $persentaseBaru,
-                ]);
-            }
-
-            // Catat log transaksi di Firebase
-            $this->transaksiService->create([
-                'uid_kartu' => $warga['uid_kartu'],
-                'nik' => $warga['nik'],
-                'jumlah_diambil' => $request->jumlah,
-                'keterangan' => 'Ambil jatah bulan ' . $request->tipe // Catat bulannya
-            ]);
-
-            return response()->json(['status' => 'success'], 200);
+        if (!$warga) {
+            return response()->json(['status' => 'error', 'message' => 'Warga tidak ditemukan.'], 404);
         }
 
-        return response()->json(['status' => 'error', 'message' => 'Warga tidak ditemukan.'], 404);
+        $uid = $warga['uid_kartu'];
+
+        // Update status jatah
+        if ($request->tipe === 'lalu') {
+            $this->jatahWargaService->ambilJatahLalu($uid);
+        } else {
+            $this->jatahWargaService->ambilJatahIni($uid);
+        }
+
+        // Kurangi stok di Perangkat
+        $this->perangkatService->kurangiStok($request->id_alat, (float) $request->jumlah);
+
+        // Catat log transaksi
+        $this->transaksiService->create([
+            'uid_kartu'      => $uid,
+            'nik'            => $warga['nik'],
+            'jumlah_diambil' => (float) $request->jumlah,
+            'keterangan'     => 'Ambil jatah bulan ' . $request->tipe,
+        ]);
+
+        return response()->json(['status' => 'success'], 200);
     }
 
-    // 3. Fungsi Update Stok (Heartbeat)
+    // 3. Fungsi Update Stok (Heartbeat dari ESP32)
     public function updateStokPerangkat(Request $request)
     {
         $request->validate([
-            'id_alat' => 'required|string',
+            'id_alat'         => 'required|string',
             'sisa_stok_beras' => 'required|numeric',
-            'persentase_stok' => 'required|numeric'
+            'persentase_stok' => 'required|numeric',
         ]);
 
         $updated = $this->perangkatService->updateStok(
             $request->id_alat,
-            $request->sisa_stok_beras,
-            $request->persentase_stok
+            (float) $request->sisa_stok_beras,
+            (float) $request->persentase_stok
         );
 
-        if ($updated) {
-            return response()->json(['status' => 'success'], 200);
+        if (!$updated) {
+            return response()->json(['status' => 'error', 'message' => 'Alat tidak terdaftar.'], 404);
         }
 
-        return response()->json(['status' => 'error', 'message' => 'Alat tidak terdaftar.'], 404);
+        return response()->json(['status' => 'success'], 200);
     }
 }

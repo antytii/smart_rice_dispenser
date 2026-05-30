@@ -11,26 +11,59 @@ class FirebaseService
 
     public function __construct()
     {
-        $factory = (new Factory)
-            ->withServiceAccount(config('firebase.credentials.file'))
-            ->withDatabaseUri(config('firebase.database.url'));
+        $factory = (new Factory())
+            ->withServiceAccount(base_path(config('firebase.credentials')))
+            ->withDatabaseUri(config('firebase.database_url'));
 
         $this->database = $factory->createDatabase();
     }
 
     /**
-     * Mendapatkan instance Database
+     * Ambil referensi ke path tertentu di Firebase Realtime Database
      */
-    public function getDatabase(): Database
+    public function ref(string $path): \Kreait\Firebase\Database\Reference
     {
-        return $this->database;
+        return $this->database->getReference($path);
     }
 
     /**
-     * Mendapatkan reference ke path tertentu
+     * Ambil data dari path tertentu (return array atau null)
      */
-    public function getReference(string $path)
+    public function get(string $path): mixed
     {
-        return $this->database->getReference($path);
+        return $this->database->getReference($path)->getValue();
+    }
+
+    /**
+     * Simpan data ke path tertentu (set/overwrite)
+     */
+    public function set(string $path, mixed $data): void
+    {
+        $this->database->getReference($path)->set($data);
+    }
+
+    /**
+     * Update sebagian field di path tertentu
+     */
+    public function update(string $path, array $data): void
+    {
+        $this->database->getReference($path)->update($data);
+    }
+
+    /**
+     * Hapus node di path tertentu
+     */
+    public function delete(string $path): void
+    {
+        $this->database->getReference($path)->remove();
+    }
+
+    /**
+     * Push data baru ke path (auto-generate key)
+     */
+    public function push(string $path, mixed $data): string
+    {
+        $newRef = $this->database->getReference($path)->push($data);
+        return $newRef->getKey();
     }
 }
