@@ -17,6 +17,11 @@ class JatahWarga extends Model
         'diambil_pada'
     ];
 
+    protected $casts = [
+        'jumlah_kg' => 'float',
+        'diambil_pada' => 'datetime',
+    ];
+
     public function warga()
     {
         return $this->belongsTo(Warga::class, 'uid_kartu', 'uid_kartu');
@@ -26,10 +31,12 @@ class JatahWarga extends Model
      * Opsi C yang ditingkatkan (Otomatis Penuh & Malas/Lazy)
      * Dipanggil kapan saja (saat buka halaman admin, atau warga nge-tap).
      * Akan mengecek apakah jatah bulan ini sudah dibuat untuk semua warga aktif.
+     * 
+     * Menggunakan MySQL — sangat cepat karena semua query lokal (< 5ms).
      */
     public static function pastikanJatahBulanIniAda()
     {
-        $bulanIni = now()->format('Y-m'); // Contoh: 2026-05
+        $bulanIni = now()->format('Y-m'); // Contoh: 2026-06
 
         // Ambil semua uid warga yang aktif
         $wargaAktif = Warga::where('status', 'Aktif')->get();

@@ -4,59 +4,55 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Services\Firebase\WargaService;
-use App\Services\Firebase\TransaksiService;
-use App\Services\Firebase\PerangkatService;
-use App\Services\Firebase\JatahWargaService;
+use App\Models\Warga;
+use App\Models\Transaksi;
+use App\Models\Perangkat;
+use App\Models\JatahWarga;
 use App\Services\Firebase\FirebaseService;
+use Carbon\Carbon;
 
 class DispenserController extends Controller
 {
-    protected WargaService $wargaService;
-    protected TransaksiService $transaksiService;
-    protected PerangkatService $perangkatService;
-    protected JatahWargaService $jatahWargaService;
-
-    public function __construct()
-    {
-        $firebase = new FirebaseService();
-        $this->wargaService = new WargaService($firebase);
-        $this->transaksiService = new TransaksiService($firebase);
-        $this->perangkatService = new PerangkatService($firebase);
-        $this->jatahWargaService = new JatahWargaService($firebase, $this->wargaService);
-    }
-
     // 1. Fungsi saat warga TAP e-KTP
     public function cekWarga(Request $request)
     {
         $request->validate(['uid_kartu' => 'required|string']);
 
-        $warga = $this->wargaService->findByUid($request->uid_kartu);
+        // Baca dari MySQL (cepat, < 5ms)
+        $warga = Warga::where('uid_kartu', $request->uid_kartu)->first();
 
         if (!$warga) {
             return response()->json(['status' => 'error', 'message' => 'e-KTP tidak terdaftar.'], 404);
         }
 
-        if ($warga['status'] !== 'Aktif') {
+        if ($warga->status !== 'Aktif') {
             return response()->json(['status' => 'error', 'message' => 'Kartu tidak aktif.'], 403);
         }
 
         // Pastikan jatah bulan ini sudah ter-generate (Lazy)
-        $this->jatahWargaService->pastikanJatahBulanIniAda();
+        JatahWarga::pastikanJatahBulanIniAda();
 
-        $uid = $warga['uid_kartu'];
+        $uid = $warga->uid_kartu;
+        $bulanIni = Carbon::now()->format('Y-m');
 
         // Jatah dari bulan-bulan lalu yang belum diambil
-        $jatahLalu = $this->jatahWargaService->totalJatahLalu($uid);
+        $jatahLalu = JatahWarga::where('uid_kartu', $uid)
+            ->where('periode_bulan', '!=', $bulanIni)
+            ->where('status', 'Belum Diambil')
+            ->sum('jumlah_kg');
 
         // Jatah khusus bulan ini
-        $jatahIni = $this->jatahWargaService->totalJatahIni($uid);
+        $jatahIniRecord = JatahWarga::where('uid_kartu', $uid)
+            ->where('periode_bulan', $bulanIni)
+            ->where('status', 'Belum Diambil')
+            ->first();
+        $jatahIni = $jatahIniRecord ? (float) $jatahIniRecord->jumlah_kg : 0.0;
 
         $totalJatah = $jatahLalu + $jatahIni;
 
         // Pengecekan Stok Beras di Perangkat
-        $perangkat = $this->perangkatService->first();
-        if ($perangkat && $perangkat['sisa_stok_beras'] < $totalJatah && $totalJatah > 0) {
+        $perangkat = Perangkat::first();
+        if ($perangkat && $perangkat->sisa_stok_beras < $totalJatah && $totalJatah > 0) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Stok Mesin Habis' // Tepat 16 karakter
@@ -66,8 +62,8 @@ class DispenserController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => [
-                'nama'       => $warga['nama'],
-                'pin'        => $warga['pin'],
+                'nama'       => $warga->nama,
+                'pin'        => $warga->pin,
                 'jatah_lalu' => (float) $jatahLalu,
                 'jatah_ini'  => (float) $jatahIni,
             ]
@@ -84,31 +80,80 @@ class DispenserController extends Controller
             'tipe'      => 'required|string', // "lalu" atau "ini"
         ]);
 
-        $warga = $this->wargaService->findByUid($request->uid_kartu);
+        $warga = Warga::where('uid_kartu', $request->uid_kartu)->first();
 
         if (!$warga) {
             return response()->json(['status' => 'error', 'message' => 'Warga tidak ditemukan.'], 404);
         }
 
-        $uid = $warga['uid_kartu'];
+        $uid = $warga->uid_kartu;
+        $bulanIni = Carbon::now()->format('Y-m');
 
-        // Update status jatah
+        // Update status jatah di MySQL
         if ($request->tipe === 'lalu') {
-            $this->jatahWargaService->ambilJatahLalu($uid);
+            // Tandai semua jatah lalu sebagai "Sudah Diambil"
+            JatahWarga::where('uid_kartu', $uid)
+                ->where('periode_bulan', '!=', $bulanIni)
+                ->where('status', 'Belum Diambil')
+                ->update([
+                    'status' => 'Sudah Diambil',
+                    'diambil_pada' => now(),
+                ]);
         } else {
-            $this->jatahWargaService->ambilJatahIni($uid);
+            // Tandai jatah bulan ini sebagai "Sudah Diambil"
+            JatahWarga::where('uid_kartu', $uid)
+                ->where('periode_bulan', $bulanIni)
+                ->update([
+                    'status' => 'Sudah Diambil',
+                    'diambil_pada' => now(),
+                ]);
         }
 
-        // Kurangi stok di Perangkat
-        $this->perangkatService->kurangiStok($request->id_alat, (float) $request->jumlah);
+        // Kurangi stok di Perangkat (MySQL)
+        $perangkat = Perangkat::where('id_alat', $request->id_alat)->first();
+        if ($perangkat) {
+            $sisaBaru = max(0, $perangkat->sisa_stok_beras - (float) $request->jumlah);
+            $perangkat->update([
+                'sisa_stok_beras' => $sisaBaru,
+                'persentase_stok' => ($sisaBaru / 1.0) * 100, // Sesuaikan logic kapasitas max
+                'last_ping'       => now(),
+            ]);
+        }
 
-        // Catat log transaksi
-        $this->transaksiService->create([
+        // Catat log transaksi di MySQL
+        Transaksi::create([
             'uid_kartu'      => $uid,
-            'nik'            => $warga['nik'],
+            'nik'            => $warga->nik,
             'jumlah_diambil' => (float) $request->jumlah,
             'keterangan'     => 'Ambil jatah bulan ' . $request->tipe,
         ]);
+
+        // Dual-write ke Firebase (agar realtime listener di dashboard tetap update)
+        try {
+            $firebase = new FirebaseService();
+            
+            // Update jatah di Firebase
+            $jatahAll = JatahWarga::where('uid_kartu', $uid)->get();
+            foreach ($jatahAll as $jatah) {
+                $firebase->set("jatah_wargas/{$uid}/{$jatah->periode_bulan}", [
+                    'jumlah_kg'    => $jatah->jumlah_kg,
+                    'status'       => $jatah->status,
+                    'diambil_pada' => $jatah->diambil_pada ? $jatah->diambil_pada->toIso8601String() : null,
+                    'created_at'   => $jatah->created_at->toIso8601String(),
+                ]);
+            }
+
+            // Push transaksi ke Firebase
+            $firebase->push('transaksis', [
+                'uid_kartu'      => $uid,
+                'nik'            => $warga->nik,
+                'jumlah_diambil' => (float) $request->jumlah,
+                'keterangan'     => 'Ambil jatah bulan ' . $request->tipe,
+                'created_at'     => now()->toIso8601String(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning("Dual-write Firebase gagal (transaksi): " . $e->getMessage());
+        }
 
         return response()->json(['status' => 'success'], 200);
     }
@@ -122,15 +167,22 @@ class DispenserController extends Controller
             'persentase_stok' => 'required|numeric',
         ]);
 
-        $updated = $this->perangkatService->updateStok(
-            $request->id_alat,
-            (float) $request->sisa_stok_beras,
-            (float) $request->persentase_stok
-        );
+        // Simpan ke MySQL
+        $perangkat = Perangkat::where('id_alat', $request->id_alat)->first();
 
-        if (!$updated) {
+        if (!$perangkat) {
             return response()->json(['status' => 'error', 'message' => 'Alat tidak terdaftar.'], 404);
         }
+
+        $perangkat->update([
+            'sisa_stok_beras' => (float) $request->sisa_stok_beras,
+            'persentase_stok' => (float) $request->persentase_stok,
+            'status_alat'     => 'Online',
+            'last_ping'       => now(),
+        ]);
+
+        // Dual-write ke Firebase (sudah dilakukan oleh ESP32 sendiri, jadi ini opsional)
+        // ESP32 langsung menulis ke Firebase, jadi kita hanya perlu memastikan MySQL terupdate
 
         return response()->json(['status' => 'success'], 200);
     }

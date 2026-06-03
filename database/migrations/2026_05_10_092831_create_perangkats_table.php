@@ -9,10 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('perangkats', function (Blueprint $table) {
-            $table->string('id_alat')->primary(); // PK (String)
-            $table->float('sisa_stok_beras'); 
-            $table->float('persentase_stok'); 
-            $table->string('status_alat')->default('Online'); 
+            $table->string('id_alat')->primary(); // PK (String), contoh: "ALAT-001"
+            $table->float('sisa_stok_beras')->default(0);
+            $table->float('persentase_stok')->default(0);
+            $table->string('status_alat')->default('Online');
+            $table->timestamp('last_ping')->nullable(); // Waktu terakhir ESP32 heartbeat
             $table->timestamps();
         });
     }

@@ -10,4 +10,10 @@ export default defineConfig({
         }),
         react(),
     ],
+    server: {
+        cors: true, // Mengizinkan Ngrok mengambil aset
+        hmr: {
+            host: 'localhost',
+        },
+    },
 });

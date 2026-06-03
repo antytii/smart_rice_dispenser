@@ -25,7 +25,7 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
                 preserveState: true, 
                 preserveScroll: true
             });
-        }, 15000); // Diubah dari 3s ke 15s agar tidak membebani browser & kuota Firebase
+        }, 30000); // 30s — backend sudah baca dari MySQL lokal (< 50ms per request)
 
         return () => clearInterval(interval);
     }, []);

@@ -21,7 +21,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                 preserveState: true, 
                 preserveScroll: true
             });
-        }, 15000); // Diubah dari 3s ke 15s agar tidak membebani browser & kuota Firebase
+        }, 30000); // 30s — backend sudah baca dari MySQL lokal (< 50ms per request)
 
         return () => clearInterval(interval);
     }, []);
@@ -116,7 +116,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                         </thead>
                         <tbody>
                             {transaksi.length > 0 ? transaksi.map((trx) => (
-                                <tr key={trx.id}>
+                                <tr key={trx.id_transaksi}>
                                     <td>
                                         {new Date(trx.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                     </td>

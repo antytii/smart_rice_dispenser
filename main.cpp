@@ -11,29 +11,30 @@
 // =========================================================================
 // 1. KONFIGURASI PENGGUNA
 // =========================================================================
-#define WIFI_SSID       "Hotspot"
-#define WIFI_PASSWORD   "12345678"
-#define FIREBASE_HOST   "https://iot-smartrice-default-rtdb.asia-southeast1.firebasedatabase.app/" 
+#define WIFI_SSID       "Wokwi-GUEST"
+#define WIFI_PASSWORD   ""
+#define FIREBASE_HOST   "iot-smartrice-default-rtdb.asia-southeast1.firebasedatabase.app" 
 #define FIREBASE_AUTH   "WTA27Yg56Ll7VtINJ0ft6JdNghS51vZnhNgf3hQI"
 
-float nilai_kalibrasi_hx711 = -462.30; 
+// Calibration factor for HX711 (adjusted so simulator 0.2 kg reads ~0.200 kg)
+float nilai_kalibrasi_hx711 = 0.50850f; 
 const float TINGGI_TANGKI_MAKSIMAL = 50.0; 
 const String ID_ALAT = "ALAT-001"; // ID Alat sesuai node 'perangkats'
 
 // =========================================================================
-// 2. DEKLARASI PIN HARDWARE (SUDAH DISELARASKAN & BEBAS BENTROK)
+// 2. DEKLARASI PIN HARDWARE (SUDAH DISELARASKAN DENGAN DIAGRAM)
 // =========================================================================
 // JALUR SPI MURNI (Untuk RFID RC522)
-#define PIN_RST          4   // RFID Reset (Kabel RST RFID wajib pasang ke D4)
-#define PIN_SS           5   // RFID SDA/SS (Kembalikan ke D5, jalur default SPI)
+#define PIN_RST          17  // RFID Reset (Sesuai diagram: D17)
+#define PIN_SS           5   // RFID SDA/SS (Sesuai diagram: D5)
 
 // JALUR SENSOR & AKTUATOR
-#define PIN_TRIG         12  // Ultrasonic Trigger
-#define PIN_ECHO         35  // Ultrasonic Echo (Pindah ke D35 karena ini pin KHUSUS INPUT)
-#define PIN_DOUT         34  // Load Cell HX711 Data (Pin KHUSUS INPUT, aman)
-#define PIN_SCK          15  // Load Cell HX711 Clock (Pindah dari D5 agar tidak tabrakan dengan RFID)
-#define PIN_SERVO        13  // Motor Servo Katup
-#define PIN_BUZZER       2   // Buzzer Positif
+#define PIN_TRIG         2   // Ultrasonic Trigger (Sesuai diagram: D2)
+#define PIN_ECHO         15  // Ultrasonic Echo (Sesuai diagram: D15)
+#define PIN_DOUT         4   // Load Cell HX711 Data/DT (Sesuai diagram: D4)
+#define PIN_SCK          16  // Load Cell HX711 Clock/SCK (Sesuai diagram: D16)
+#define PIN_SERVO        13  // Motor Servo (Sesuai diagram: D13)
+#define PIN_BUZZER       3   // Buzzer Positif (Sesuai diagram: Pin RX / GPIO3)
 
 // JALUR KEYPAD 4x4
 const byte ROWS = 4;
@@ -45,15 +46,17 @@ char keys[ROWS][COLS] = {
   {'*','0','#','D'}
 };
 
-// Baris (Row) butuh pin dengan internal pull-up. D15 diganti ke D14 agar aman saat booting:
-byte rowPins[ROWS] = {32, 33, 27, 14};    
-// Kolom (Col) sebagai output:
-byte colPins[COLS] = {16, 17, 25, 26};
+// Baris (Row) R1-R4
+byte rowPins[ROWS] = {32, 33, 25, 26};    
+// Kolom (Col) C1-C4
+byte colPins[COLS] = {27, 14, 12, 0};
+
 // =========================================================================
 // 3. INISIALISASI OBJEK & VARIABEL GLOBAL
 // =========================================================================
 MFRC522 rfid(PIN_SS, PIN_RST);
-Keypad keypad = Keypad(makeKeymap(keys), colPins, rowPins, ROWS, COLS);
+// Urutan argumen diperbaiki menjadi: (keys, rowPins, colPins, ROWS, COLS)
+Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 HX711 scale;
 Servo katupServo;
 LiquidCrystal_I2C lcd(0x27, 16, 2); // Menggunakan internal I2C default (SDA: D21, SCL: D22)
@@ -74,7 +77,8 @@ void updateStatusDanStokAlat(float sisaKg, float persentase);
 
 // Variable global untuk heartbeat berkala
 unsigned long lastHeartbeatTime = 0;
-const unsigned long HEARTBEAT_INTERVAL = 10000; // 10 detik
+const unsigned long HEARTBEAT_INTERVAL = 1000; // 1 detik
+unsigned int heartbeatCounter = 0; // counter to reduce verbose debug frequency
 
 // Fungsi pendukung untuk membaca sensor ultrasonik dan menghitung sisa stok beras
 void hitungStokBeras(float &sisaKg, float &persentase, float &jarakOut) {
@@ -120,8 +124,18 @@ void setup() {
   rfid.PCD_SetAntennaGain(rfid.RxGain_max);
 
   scale.begin(PIN_DOUT, PIN_SCK);
+  
+  // --- FITUR BARU: PENGECEKAN STATUS LOAD CELL ---
+  Serial.print("Mengecek Load Cell (HX711)... ");
+  if (scale.is_ready()) {
+    Serial.println("[SUKSES] Load Cell Siap dan Terbaca Tanpa Masalah!");
+  } else {
+    Serial.println("[ERROR] Load Cell Tidak Merespon! Cek kabel DOUT dan SCK.");
+  }
+  // -----------------------------------------------
+
   scale.set_scale(nilai_kalibrasi_hx711);
-  scale.tare(); 
+  scale.tare();
   
   katupServo.attach(PIN_SERVO);
   katupServo.write(0); // Katup terkunci rapat (0 derajat)
@@ -138,9 +152,20 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-
-  // Hubungkan ke NTP server untuk sinkronisasi waktu UTC
+    // Hubungkan ke NTP server untuk sinkronisasi waktu UTC
   configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  
+  // ---> TAMBAHKAN KODE INI <---
+  lcd.clear();
+  lcd.print("Tunggu NTP Sync.");
+  Serial.print("Menunggu sinkronisasi waktu NTP");
+  struct tm timeinfo;
+  while (!getLocalTime(&timeinfo)) {
+    Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("\n[SUKSES] Waktu berhasil disinkronisasi!");
+
 
   // ==========================================
   // KONFIGURASI & PENGECEKAN FIREBASE
@@ -209,6 +234,27 @@ void loop() {
     Serial.print(" kg (");
     Serial.print(persentase);
     Serial.println("%)");
+
+    // ===== DEBUG HX711 LOAD CELL (Hapus setelah selesai debug) =====
+    // Increment heartbeat counter and only print detailed HX711 debug once every 10 heartbeats
+    heartbeatCounter++;
+    if (heartbeatCounter % 10 == 0) {
+      Serial.println("--- DEBUG HX711 ---");
+      if (scale.is_ready()) {
+        long rawValue = scale.read();
+        float beratGram = scale.get_units(5);
+        float beratKg = beratGram / 1000.0f;
+        Serial.print("  Status     : READY");
+        Serial.print(" | RAW ADC    : "); Serial.println(rawValue);
+        Serial.print("  get_units() gram : "); Serial.print(beratGram, 4);
+        Serial.print(" | kg : "); Serial.println(beratKg, 6);
+        Serial.print("  Kalibrasi  : "); Serial.println(nilai_kalibrasi_hx711, 5);
+      } else {
+        Serial.println("  Status     : *** TIDAK READY - CEK KABEL DOUT/SCK! ***");
+      }
+      Serial.println("-------------------");
+    }
+    // ===== END DEBUG HX711 =====
   }
 
   if (!rfid.PICC_IsNewCardPresent() || !rfid.PICC_ReadCardSerial()) {
@@ -462,7 +508,14 @@ void loop() {
   bool statusSukses = true;
 
   while (beratSekarang < totalTargetBeras) {
-    beratSekarang = scale.get_units(2) / 1000.0; 
+    // ===== DEBUG TIMBANGAN (Hapus setelah selesai debug) =====
+    float beratGram = scale.get_units(2);
+    beratSekarang = beratGram / 1000.0f; 
+    Serial.print("[TIMBANG] Gram: "); Serial.print(beratGram, 4);
+    Serial.print(" | kg: "); Serial.print(beratSekarang, 6);
+    Serial.print(" | Target: "); Serial.print(totalTargetBeras);
+    Serial.println(" kg");
+    // ===== END DEBUG TIMBANGAN =====
     if (beratSekarang < 0) beratSekarang = 0;
 
     // Tampilkan pergerakan berat beras di baris kedua
@@ -549,6 +602,9 @@ String proresInputPIN() {
         lcd.setCursor(pin.length(), 1);
       }
     }
+    
+    // WAJIB DITAMBAHKAN: Memberi napas pada ESP32 agar tidak freeze
+    delay(10); 
   }
   return pin;
 }
@@ -561,16 +617,8 @@ void updateStatusDanStokAlat(float sisaKg, float persentase) {
   jsonAlat.add("persentase_stok", persentase);
   jsonAlat.add("status_alat", "Online");
   
-  struct tm timeinfo;
-  if (getLocalTime(&timeinfo)) {
-    char timeStringBuff[30];
-    strftime(timeStringBuff, sizeof(timeStringBuff), "%Y-%m-%dT%H:%M:%SZ", &timeinfo);
-    jsonAlat.add("last_ping", timeStringBuff);
-  } else {
-    // Fallback jika belum tersinkronisasi dengan NTP
-    jsonAlat.add("last_ping", "2026-05-25T18:00:00Z");
-  }
-  
+  jsonAlat.set("last_ping/.sv", "timestamp");
+
   Firebase.RTDB.updateNode(&fbDo, pathAlat, &jsonAlat);
 }
 

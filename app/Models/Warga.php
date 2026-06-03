@@ -21,8 +21,6 @@ class Warga extends Model
         'alamat',
         'pin',
         'jatah_bulanan',
-        'jatah_lalu', 
-        'jatah_ini',  
         'status'
     ];
 
