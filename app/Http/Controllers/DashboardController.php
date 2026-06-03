@@ -55,7 +55,7 @@ class DashboardController extends Controller
         $wargas = Warga::with('jatah_warga')
             ->withSum('transaksi', 'jumlah_diambil')
             ->get()
-            ->map(function ($warga) {
+            ->map(function (Warga $warga) {
                 // Hitung total jatah "Belum Diambil"
                 $totalBelumDiambil = $warga->jatah_warga
                     ->where('status', 'Belum Diambil')
