@@ -33,6 +33,6 @@ jobs:
             php artisan route:cache
             php artisan view:cache
             
-            # (Opsional) Hapus tanda pagar di bawah ini jika kamu juga mengubah file CSS/JS/Vue/React
-            # npm install
-            # npm run build
+            #(Opsional) Hapus tanda pagar di bawah ini jika kamu juga mengubah file CSS/JS/Vue/React
+            npm install
+            npm run build
