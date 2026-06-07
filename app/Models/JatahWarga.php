@@ -62,6 +62,21 @@ class JatahWarga extends Model
         // Masukkan massal (jika ada)
         if (count($dataBaru) > 0) {
             self::insert($dataBaru);
+
+            // Dual-write ke Firebase agar ESP32 bisa baca jatah baru
+            try {
+                $firebase = new \App\Services\Firebase\FirebaseService();
+                foreach ($dataBaru as $data) {
+                    $firebase->set("jatah_wargas/{$data['uid_kartu']}/{$data['periode_bulan']}", [
+                        'jumlah_kg'    => (float) $data['jumlah_kg'],
+                        'status'       => $data['status'],
+                        'diambil_pada' => null,
+                        'created_at'   => $data['created_at']->toIso8601String(),
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::warning("Dual-write Firebase gagal (jatah otomatis): " . $e->getMessage());
+            }
         }
     }
 }
