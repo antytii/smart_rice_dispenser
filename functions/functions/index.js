@@ -108,7 +108,7 @@ exports.onJatahUpdate = onValueWritten(
 
     const uid = event.params.uid;
     const periode = event.params.periode;
-    console.log(`[TRIGGER] Jatah diupdate: ${uid} / ${periode}`);
+    console.log(`[TRIGGER] Jatah diupdate: ${uid} / ${periode}`, data);
 
     return pushToLaravel("jatah_update", {
       uid_kartu: uid,

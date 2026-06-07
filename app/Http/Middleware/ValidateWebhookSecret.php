@@ -14,7 +14,7 @@ class ValidateWebhookSecret
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $expectedSecret = config('app.webhook_secret') ?: env('WEBHOOK_SECRET');
+        $expectedSecret = config('app.webhook_secret');
 
         if (!$expectedSecret) {
             // Jika WEBHOOK_SECRET belum di-set, tolak semua request webhook
