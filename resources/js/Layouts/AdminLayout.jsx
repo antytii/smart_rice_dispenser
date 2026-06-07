@@ -2,15 +2,33 @@ import { Head, Link } from '@inertiajs/react';
 import React from 'react';
 
 export default function AdminLayout({ children, title, activePage, perangkat = [] }) {
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+    
     // Mengambil data mesin pertama (asumsi ID: BANSOS-M1)
     const mesin = perangkat.length > 0 ? perangkat[0] : null;
     const statusMesin = mesin ? mesin.status_alat : 'Offline';
 
+    const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
     return (
-        <div className="app-layout">
+        <div className={`app-layout ${isSidebarOpen ? 'mobile-open' : ''}`}>
             <Head title={title} />
 
-            <aside className="sidebar">
+            {/* Mobile Header - Muncul hanya di layar kecil */}
+            <header className="mobile-header">
+                <div className="brand-small">
+                    <div className="brand-icon">SB</div>
+                    <strong>SMART-BANSOS</strong>
+                </div>
+                <button className="hamburger" onClick={toggleSidebar}>
+                    {isSidebarOpen ? '✕' : '☰'}
+                </button>
+            </header>
+
+            {/* Overlay untuk menutup sidebar saat diklik di luar area sidebar */}
+            {isSidebarOpen && <div className="sidebar-overlay" onClick={toggleSidebar}></div>}
+
+            <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-brand">
                     <div className="brand-icon">SB</div>
                     <div>
@@ -20,9 +38,9 @@ export default function AdminLayout({ children, title, activePage, perangkat = [
                 </div>
 
                 <nav className="sidebar-nav">
-                    <Link className={activePage === 'dashboard' ? 'active' : ''} href={route('dashboard')}>Dashboard</Link>
-                    <Link className={activePage === 'data-warga' ? 'active' : ''} href={route('data-warga')}>Data Warga</Link>
-                    <Link className={activePage === 'grafik' ? 'active' : ''} href={route('grafik')}>Grafik Laporan</Link>
+                    <Link onClick={() => setIsSidebarOpen(false)} className={activePage === 'dashboard' ? 'active' : ''} href={route('dashboard')}>Dashboard</Link>
+                    <Link onClick={() => setIsSidebarOpen(false)} className={activePage === 'data-warga' ? 'active' : ''} href={route('data-warga')}>Data Warga</Link>
+                    <Link onClick={() => setIsSidebarOpen(false)} className={activePage === 'grafik' ? 'active' : ''} href={route('grafik')}>Grafik Laporan</Link>
                 </nav>
 
                 <div className="sidebar-status">
