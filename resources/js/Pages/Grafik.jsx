@@ -36,7 +36,7 @@ export default function Grafik({ auth, warga = [], perangkat: initialPerangkat =
                 preserveState: true, 
                 preserveScroll: true
             });
-        }, 30000); // 30s — backend sudah baca dari MySQL lokal (< 50ms per request)
+        }, 5000); 
 
         return () => clearInterval(interval);
     }, []);

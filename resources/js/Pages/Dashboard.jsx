@@ -21,7 +21,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                 preserveState: true, 
                 preserveScroll: true
             });
-        }, 30000); // 30s — backend sudah baca dari MySQL lokal (< 50ms per request)
+        }, 5000); // 5s — backend sudah baca dari MySQL lokal (< 50ms per request)
 
         return () => clearInterval(interval);
     }, []);

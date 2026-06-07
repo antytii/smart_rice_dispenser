@@ -130,11 +130,12 @@ class SyncFirebaseToLocal extends Command
 
         if ($transaksis) {
             foreach ($transaksis as $key => $data) {
-                // Cek apakah transaksi sudah ada (berdasarkan kombinasi uid+waktu+jumlah)
-                $createdAt = isset($data['created_at']) ? Carbon::parse($data['created_at']) : now();
+                // Firebase menggunakan key 'timestamp' (milidetik)
+                $timestamp = $data['timestamp'] ?? null;
+                $createdAt = $timestamp ? Carbon::createFromTimestampMs($timestamp) : now();
 
                 $exists = Transaksi::where('uid_kartu', (string) ($data['uid_kartu'] ?? ''))
-                    ->where('created_at', $createdAt)
+                    ->where('waktu_ambil', $createdAt->toDateTimeString())
                     ->where('jumlah_diambil', (float) ($data['jumlah_diambil'] ?? 0))
                     ->exists();
 
