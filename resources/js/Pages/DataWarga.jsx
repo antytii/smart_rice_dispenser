@@ -380,7 +380,7 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
                                 <div className="col-md-6">
                                     <label htmlFor="nik" className="form-label">NIK</label>
                                     <input type="text" className={`form-control ${errors.nik ? 'is-invalid' : ''}`} id="nik" maxLength="16" 
-                                           value={data.nik} onChange={e => setData('nik', e.target.value)} required />
+                                           value={data.nik} onChange={e => setData('nik', e.target.value.replace(/\D/g, ''))} required />
                                     {errors.nik && <div className="invalid-feedback">{errors.nik}</div>}
                                 </div>
 
