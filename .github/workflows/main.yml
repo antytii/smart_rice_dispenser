@@ -1,0 +1,38 @@
+name: Auto Deploy Laravel to VPS
+
+on:
+  push:
+    branches:
+      - main # Akan berjalan otomatis setiap ada push ke branch main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Eksekusi Perintah di VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Masuk ke folder proyek
+            cd /var/www/smart_rice_dispenser
+            
+            # Tarik kode terbaru dari GitHub
+            git pull origin main
+            
+            # Perbarui paket PHP jika ada yang baru
+            composer install --no-interaction --prefer-dist --optimize-autoloader
+            
+            # Eksekusi migrasi database jika ada tabel baru (tanpa konfirmasi)
+            php artisan migrate --force
+            
+            # Bersihkan dan perbarui memori (cache) Laravel
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # (Opsional) Hapus tanda pagar di bawah ini jika kamu juga mengubah file CSS/JS/Vue/React
+            # npm install
+            # npm run build
