@@ -63,11 +63,15 @@ class FirebaseWebhookController extends Controller
     private function handleTransaksiBaru(array $data): void
     {
         $uid = (string) ($data['uid_kartu'] ?? '');
-        $createdAt = isset($data['created_at']) ? Carbon::parse($data['created_at']) : now();
+        $rawTime = $data['created_at'] ?? null;
+        
+        $createdAt = is_numeric($rawTime) 
+            ? Carbon::createFromTimestampMs($rawTime) 
+            : ($rawTime ? Carbon::parse($rawTime) : now());
 
-        // Cek duplikasi berdasarkan uid + waktu + jumlah
+        // Cek duplikasi berdasarkan uid + waktu_ambil + jumlah
         $exists = Transaksi::where('uid_kartu', $uid)
-            ->where('created_at', $createdAt)
+            ->where('waktu_ambil', $createdAt->toDateTimeString())
             ->where('jumlah_diambil', (float) ($data['jumlah_diambil'] ?? 0))
             ->exists();
 
@@ -100,13 +104,18 @@ class FirebaseWebhookController extends Controller
             throw new \InvalidArgumentException('id_alat tidak boleh kosong.');
         }
 
+        $rawTime = $data['last_ping'] ?? null;
+        $lastPing = is_numeric($rawTime) 
+            ? Carbon::createFromTimestampMs($rawTime) 
+            : ($rawTime ? Carbon::parse($rawTime) : now());
+
         Perangkat::updateOrCreate(
             ['id_alat' => $idAlat],
             [
                 'sisa_stok_beras' => (float) ($data['sisa_stok_beras'] ?? 0),
                 'persentase_stok' => (float) ($data['persentase_stok'] ?? 0),
                 'status_alat'     => $data['status_alat'] ?? 'Online',
-                'last_ping'       => isset($data['last_ping']) ? Carbon::parse($data['last_ping']) : now(),
+                'last_ping'       => $lastPing,
             ]
         );
 
@@ -125,6 +134,11 @@ class FirebaseWebhookController extends Controller
             throw new \InvalidArgumentException('uid_kartu dan periode_bulan tidak boleh kosong.');
         }
 
+        $rawTime = $data['diambil_pada'] ?? null;
+        $diambilPada = is_numeric($rawTime) 
+            ? Carbon::createFromTimestampMs($rawTime) 
+            : ($rawTime ? Carbon::parse($rawTime) : null);
+
         JatahWarga::updateOrCreate(
             [
                 'uid_kartu'     => $uid,
@@ -133,7 +147,7 @@ class FirebaseWebhookController extends Controller
             [
                 'jumlah_kg'    => (float) ($data['jumlah_kg'] ?? 10),
                 'status'       => $data['status'] ?? 'Belum Diambil',
-                'diambil_pada' => isset($data['diambil_pada']) ? Carbon::parse($data['diambil_pada']) : null,
+                'diambil_pada' => $diambilPada,
             ]
         );
 
