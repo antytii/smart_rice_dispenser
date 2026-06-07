@@ -108,7 +108,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                     <table className="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Waktuuu</th>
+                                <th>Waktu</th>
                                 <th>NIK</th>
                                 <th>Nama</th>
                                 <th>Berat</th>
@@ -118,7 +118,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                             {transaksi.length > 0 ? transaksi.map((trx) => (
                                 <tr key={trx.id_transaksi}>
                                     <td>
-                                        {new Date(trx.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(trx.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                     </td>
                                     <td>{trx.nik}</td>
                                     <td>{warga.find(w => w.uid_kartu === trx.uid_kartu)?.nama || trx.nik}</td>

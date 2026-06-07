@@ -70,7 +70,7 @@ exports.onTransaksiBaru = onValueCreated(
       nik: data.nik || "",
       jumlah_diambil: data.jumlah_diambil || 0,
       keterangan: data.keterangan || "",
-      created_at: data.created_at || new Date().toISOString(),
+      created_at: data.timestamp ? new Date(data.timestamp).toISOString() : new Date().toISOString(),
     });
   }
 );
