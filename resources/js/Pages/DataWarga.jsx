@@ -14,9 +14,9 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
     // --- Efek Auto-Refresh (Realtime Polling) ---
     React.useEffect(() => {
         const interval = setInterval(() => {
-            // Cegah polling jika modal sedang terbuka (menghindari bug layar abu-abu)
-            const modal = document.getElementById('wargaModal');
-            if (modal && modal.classList.contains('show')) {
+            // Cegah polling jika ada modal apapun yang sedang terbuka (menghindari bug layar abu-abu & input ter-reset)
+            const isModalOpen = document.querySelector('.modal.show');
+            if (isModalOpen) {
                 return;
             }
 
