@@ -26,3 +26,4 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 /storage/app/firebase/service-account.json
+main.cpp

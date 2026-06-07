@@ -118,7 +118,8 @@ class PerangkatService
     {
         if (isset($item['last_ping'])) {
             $lastPing = Carbon::parse($item['last_ping']);
-            if ($lastPing->diffInSeconds(Carbon::now()) >= 30) {
+            // Toleransi dinaikkan menjadi 60 detik agar tidak flicker saat heartbeat 5 detik
+            if ($lastPing->diffInSeconds(Carbon::now()) >= 60) {
                 $item['status_alat'] = 'Offline';
             }
         }

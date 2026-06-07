@@ -32,7 +32,8 @@ class Perangkat extends Model
      */
     public function getStatusAlatAttribute($value)
     {
-        if ($this->last_ping && $this->last_ping->diffInSeconds(now()) >= 30) {
+        // Toleransi dinaikkan menjadi 60 detik (heartbeat ESP32 = 5 detik)
+        if ($this->last_ping && $this->last_ping->diffInSeconds(now()) >= 60) {
             return 'Offline';
         }
 
