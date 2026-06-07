@@ -24,7 +24,7 @@ setGlobalOptions({ maxInstances: 10 });
 // ============================================================
 // KONFIGURASI — SESUAIKAN DENGAN SERVER ANDA
 // ============================================================
-const LARAVEL_WEBHOOK_URL = "https://e9b2-180-247-44-110.ngrok-free.app/api/webhook/sensor-data";
+const LARAVEL_WEBHOOK_URL = "https://6f05-182-2-235-217.ngrok-free.app/api/webhook/sensor-data";
 const WEBHOOK_SECRET = "smart-rice-webhook-secret-2026";
 
 // ============================================================
