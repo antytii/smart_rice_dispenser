@@ -108,7 +108,7 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                     <table className="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Waktu</th>
+                                <th>Waktuuu</th>
                                 <th>NIK</th>
                                 <th>Nama</th>
                                 <th>Berat</th>
