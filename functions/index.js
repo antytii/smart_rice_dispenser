@@ -24,7 +24,7 @@ admin.initializeApp();
 // ============================================================
 // URL webhook Laravel di VPS (gunakan IP publik atau domain)
 // Untuk development lokal, gunakan ngrok atau sejenisnya
-const LARAVEL_WEBHOOK_URL = "https://6f05-182-2-235-217.ngrok-free.app/api/webhook/sensor-data";
+const LARAVEL_WEBHOOK_URL = "https://smart-rice-dispenser.syahkty.dev/api/webhook/sensor-data";
 
 // Secret yang sama dengan WEBHOOK_SECRET di file .env Laravel
 const WEBHOOK_SECRET = "smart-rice-webhook-secret-2026";
