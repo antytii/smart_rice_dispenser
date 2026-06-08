@@ -95,13 +95,15 @@ export default function Dashboard({ auth, warga = [], perangkat: initialPerangka
                 </article>
             </section>
 
-            <section id="transaksi" className="mt-4">
+            <section id="transaksi" className="panel mt-4">
                 <div className="section-heading">
                     <div>
                         <span className="eyebrow">Log Mesin IoT</span>
                         <h3>Riwayat Transaksi Realtime</h3>
                     </div>
-                    <button className="btn btn-outline-primary" onClick={downloadCSV} id="downloadBtn">Download CSV</button>
+                    <button className="btn btn-primary px-4" onClick={downloadCSV} id="downloadBtn">
+                        Download CSV
+                    </button>
                 </div>
 
                 <div className="table-responsive">

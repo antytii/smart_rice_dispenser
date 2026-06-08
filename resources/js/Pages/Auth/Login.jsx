@@ -12,29 +12,28 @@ export default function Login() {
     };
 
     return (
-        /* Ini bertindak sebagai <body class="login-page"> di HTML aslimu */
         <div className="login-page">
             <Head title="Login Admin" />
 
             <main className="login-shell">
                 {/* Bagian Visual Kiri */}
                 <section className="login-visual">
-                    <div className="brand-mark">SB</div>
+                    <img src="/images/logo.png" className="brand-logo-img-login" alt="Smart Bansos Logo" />
                     <h1>SMART-BANSOS</h1>
                     <p>Sistem distribusi beras bantuan sosial berbasis IoT dan e-KTP untuk transparansi desa.</p>
 
                     <div className="login-highlights">
-                        <span>Verifikasi e-KTP</span>
-                        <span>Stok Hopper</span>
-                        <span>Riwayat Realtime</span>
+                        <span>✦ Verifikasi e-KTP</span>
+                        <span>📦 Stok Hopper</span>
+                        <span>📊 Riwayat Realtime</span>
                     </div>
                 </section>
 
                 {/* Bagian Form Kanan */}
                 <section className="login-card">
                     <div className="mb-4">
-                        <span className="eyebrow">Admin Panel</span>
-                        <h2 className="h3 mt-2 mb-1">Masuk Dashboard</h2>
+                        <span className="eyebrow">ADMIN PANEL</span>
+                        <h2 className="mt-2 mb-1">Masuk Dashboard</h2>
                         <p className="text-muted mb-0">Gunakan akun admin perangkat desa.</p>
                     </div>
 
@@ -43,24 +42,23 @@ export default function Login() {
                             <label className="form-label">Username / Email</label>
                             <input 
                                 type="email" 
-                                className="form-control form-control-lg w-full" 
+                                className="form-control form-control-lg w-100" 
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 placeholder="admin@desa.com"
                                 required
                             />
-                            {/* Menampilkan pesan error jika login gagal */}
-                            {errors.email && <div className="text-red-500 text-sm mt-1">{errors.email}</div>}
+                            {errors.email && <div className="text-danger mt-1" style={{ fontSize: '13px' }}>{errors.email}</div>}
                         </div>
 
-                        <div className="mb-3">
+                        <div className="mb-4">
                             <label className="form-label">Password</label>
                             <input 
                                 type="password" 
-                                className="form-control form-control-lg w-full"
+                                className="form-control form-control-lg w-100"
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
-                                placeholder="admin123"
+                                placeholder="••••••••"
                                 required
                             />
                         </div>
@@ -68,11 +66,15 @@ export default function Login() {
                         <button 
                             type="submit" 
                             disabled={processing}
-                            className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:-translate-y-0.5"
+                            className="w-100"
                         >
-                            Masuk
+                            {processing ? 'Memproses...' : 'Masuk'}
                         </button>
                     </form>
+
+                    <p className="text-center mt-4 mb-0" style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        Smart-Bansos &middot; Sistem Distribusi Beras Desa
+                    </p>
                 </section>
             </main>
         </div>

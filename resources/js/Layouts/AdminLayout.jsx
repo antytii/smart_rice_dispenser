@@ -17,7 +17,7 @@ export default function AdminLayout({ children, title, activePage, perangkat = [
             {/* Mobile Header - Muncul hanya di layar kecil */}
             <header className="mobile-header">
                 <div className="brand-small">
-                    <div className="brand-icon">SB</div>
+                    <img src="/images/logo.png" className="brand-logo-img" alt="Smart Bansos Logo" />
                     <strong>SMART-BANSOS</strong>
                 </div>
                 <button className="hamburger" onClick={toggleSidebar}>
@@ -30,7 +30,7 @@ export default function AdminLayout({ children, title, activePage, perangkat = [
 
             <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
                 <div className="sidebar-brand">
-                    <div className="brand-icon">SB</div>
+                    <img src="/images/logo.png" className="brand-logo-img" alt="Smart Bansos Logo" />
                     <div>
                         <h1>SMART-BANSOS</h1>
                         <span>Admin Desa</span>

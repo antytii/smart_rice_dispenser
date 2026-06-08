@@ -114,7 +114,7 @@ export default function Grafik({ auth, warga = [], perangkat: initialPerangkat =
             </header>
 
             <section className="charts-grid mt-4">
-                <article className="panel chart-panel">
+                <article className="panel chart-panel wide">
                     <div className="section-heading compact">
                         <div>
                             <h3>Distribusi Harian</h3>
@@ -131,22 +131,19 @@ export default function Grafik({ auth, warga = [], perangkat: initialPerangkat =
                                 <h3>Stok Beras</h3>
                             </div>
                         </div>
-                        <div style={{ position: 'relative', height: '280px', width: '100%' }}>
-                            <Bar 
-                                data={stockData} 
-                                options={{ 
-                                    maintainAspectRatio: false, 
-                                    indexAxis: 'y', // Membuat bar menjadi horizontal (kiri ke kanan)
-                                    scales: {
-                                        x: { stacked: true, max: 100 },
-                                        y: { stacked: true }
-                                    }
-                                }} 
-                            />
+                        <div className="hopper-wrapper">
+                            <div className="hopper-tank">
+                                <div className="hopper-fill" style={{ height: `${validSisaPersen}%` }}></div>
+                                <div className="hopper-label">{validSisaPersen.toFixed(1)}%</div>
+                            </div>
+                            <div className="hopper-stats">
+                                <h4>{Number(sisaPersen > 0 ? mesin.sisa_stok_beras : 0).toFixed(2)} kg</h4>
+                                <p>Tersisa dari kapasitas {mesin ? mesin.kapasitas_maksimal : 0} kg</p>
+                            </div>
                         </div>
                     </article>
 
-                    <article className="panel chart-panel wide">
+                    <article className="panel chart-panel">
                         <div className="section-heading compact">
                             <div>
                                 <h3>Jumlah Penerima</h3>
