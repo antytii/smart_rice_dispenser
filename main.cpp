@@ -606,25 +606,45 @@ void loop() {
 
     unsigned long waktuTunggu = millis();
     bool wadahTerdeteksi = false;
+    unsigned long waktuMulaiStabil = 0;
+    const unsigned long DURASI_STABIL_MS = 1500; // Stabil selama 1.5 detik
 
     while (millis() - waktuTunggu < TIMEOUT_WADAH) {
-      float cekBerat = fabs(scale.get_units(3));
+      float cekBerat = fabs(scale.get_units(1)); // Baca cepat 1x
       unsigned long sisa = (TIMEOUT_WADAH - (millis() - waktuTunggu)) / 1000;
-      lcd.setCursor(0, 1);
-      lcd.print("Tunggu: " + String(sisa) + "s        ");
-
+      
       if (cekBerat >= BERAT_MIN_WADAH) {
-        wadahTerdeteksi = true;
-        lcd.clear();
-        lcd.print("Wadah terdeteksi");
+        if (waktuMulaiStabil == 0) {
+          waktuMulaiStabil = millis();
+          Serial.println("[CEK WADAH] Berat terdeteksi, menunggu stabilitas...");
+        }
+        
+        // Tampilkan progres stabilitas di LCD
+        int progres = (millis() - waktuMulaiStabil) * 100 / DURASI_STABIL_MS;
+        if (progres > 100) progres = 100;
         lcd.setCursor(0, 1);
-        lcd.print(String(cekBerat, 0) + " gram   ");
-        bipStandar(BUNYI_SUKSES);
-        Serial.print("[CEK WADAH] Wadah terdeteksi! Berat: "); Serial.print(cekBerat, 1); Serial.println(" gram");
-        delay(1500);
-        break;
+        lcd.print("Stabilizing: " + String(progres) + "% ");
+        
+        if (millis() - waktuMulaiStabil >= DURASI_STABIL_MS) {
+          wadahTerdeteksi = true;
+          lcd.clear();
+          lcd.print("Wadah STABIL");
+          lcd.setCursor(0, 1);
+          lcd.print(String(cekBerat, 0) + " gram   ");
+          bipStandar(BUNYI_SUKSES);
+          Serial.print("[CEK WADAH] Wadah STABIL! Berat: "); Serial.print(cekBerat, 1); Serial.println(" gram");
+          delay(1000);
+          break;
+        }
+      } else {
+        if (waktuMulaiStabil > 0) {
+          Serial.println("[CEK WADAH] Berat hilang/tidak stabil, reset timer.");
+        }
+        waktuMulaiStabil = 0;
+        lcd.setCursor(0, 1);
+        lcd.print("Tunggu: " + String(sisa) + "s        ");
       }
-      delay(300);
+      delay(50); // Loop lebih cepat untuk responsivitas stabilitas
     }
 
     if (!wadahTerdeteksi) {
