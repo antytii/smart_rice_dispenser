@@ -181,7 +181,6 @@ class DashboardController extends Controller
             'nik'           => $validated['nik'],
             'nama'          => $validated['nama'],
             'alamat'        => $validated['alamat'],
-            'pin'           => $validated['pin'],
             'jatah_bulanan' => (float) $validated['jatah_ini'],
             'status'        => $validated['status'],
         ];
