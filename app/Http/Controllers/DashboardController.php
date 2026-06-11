@@ -288,7 +288,7 @@ class DashboardController extends Controller
     {
         try {
             $firebase = new FirebaseService();
-            $firebase->set("wargas/{$uid}", $data);
+            $firebase->update("wargas/{$uid}", $data);
         } catch (\Exception $e) {
             \Log::warning("Dual-write Firebase gagal (warga): " . $e->getMessage());
             // Tidak throw — MySQL sudah tersimpan sebagai sumber utama
@@ -310,7 +310,7 @@ class DashboardController extends Controller
     {
         try {
             $firebase = new FirebaseService();
-            $firebase->set("jatah_wargas/{$uid}/{$periode}", $data);
+            $firebase->update("jatah_wargas/{$uid}/{$periode}", $data);
         } catch (\Exception $e) {
             \Log::warning("Dual-write Firebase gagal (jatah): " . $e->getMessage());
         }
