@@ -585,6 +585,63 @@ void loop() {
   String teksAtas = "Bulan: " + teksBulanLCD;
   lcd.print(teksAtas.substring(0, 16));
   
+
+  // =====================================================
+  // CEK WADAH VIA LOAD CELL (sebelum tare per-transaksi)
+  // =====================================================
+  const float BERAT_MIN_WADAH = 40.0;        // gram — threshold deteksi wadah (~65g wadah, margin 40g)
+  const unsigned long TIMEOUT_WADAH = 30000; // 30 detik tunggu wadah dipasang
+
+  float bacaanAwal = fabs(scale.get_units(5)); // baca 5x rata-rata sebelum tare
+  Serial.print("[CEK WADAH] Berat sebelum tare: "); Serial.print(bacaanAwal, 1); Serial.println(" gram");
+
+  if (bacaanAwal < BERAT_MIN_WADAH) {
+    // Wadah belum ada di timbangan
+    lcd.clear();
+    lcd.print("PASANG WADAH!");
+    lcd.setCursor(0, 1);
+    lcd.print("Timbangan kosong");
+    bipStandar(BUNYI_PERINGATAN);
+    Serial.println("[CEK WADAH] Wadah tidak terdeteksi, menunggu...");
+
+    unsigned long waktuTunggu = millis();
+    bool wadahTerdeteksi = false;
+
+    while (millis() - waktuTunggu < TIMEOUT_WADAH) {
+      float cekBerat = fabs(scale.get_units(3));
+      unsigned long sisa = (TIMEOUT_WADAH - (millis() - waktuTunggu)) / 1000;
+      lcd.setCursor(0, 1);
+      lcd.print("Tunggu: " + String(sisa) + "s        ");
+
+      if (cekBerat >= BERAT_MIN_WADAH) {
+        wadahTerdeteksi = true;
+        lcd.clear();
+        lcd.print("Wadah terdeteksi");
+        lcd.setCursor(0, 1);
+        lcd.print(String(cekBerat, 0) + " gram   ");
+        bipStandar(BUNYI_SUKSES);
+        Serial.print("[CEK WADAH] Wadah terdeteksi! Berat: "); Serial.print(cekBerat, 1); Serial.println(" gram");
+        delay(1500);
+        break;
+      }
+      delay(300);
+    }
+
+    if (!wadahTerdeteksi) {
+      lcd.clear();
+      lcd.print("TIMEOUT! Proses");
+      lcd.setCursor(0, 1);
+      lcd.print("dibatalkan.");
+      bipStandar(BUNYI_BLOKIR);
+      Serial.println("[CEK WADAH] Timeout! Transaksi dibatalkan.");
+      delay(3000);
+      resetTampilanStandby();
+      return;
+    }
+  } else {
+    Serial.print("[CEK WADAH] Wadah sudah ada. Berat: "); Serial.print(bacaanAwal, 1); Serial.println(" gram");
+  }
+
   scale.tare(); 
   katupServo.write(90); 
   
@@ -710,7 +767,7 @@ bool prosesGantiPIN(String uidKartu) {
   while (percobaan < MAX_PERCOBAAN_GANTI) {
     // --- Langkah 1: Minta PIN baru ---
     lcd.clear();
-    lcd.print("PIN BARU (4 Digit)");
+    lcd.print("Buat PIN Baru:");
     lcd.setCursor(0, 1);
     String pinBaru = "";
     
