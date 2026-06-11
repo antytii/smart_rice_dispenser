@@ -30,6 +30,10 @@ Route::put('/warga/{uid}', [DashboardController::class, 'updateWarga'])
     ->middleware(['auth', 'verified'])
     ->name('warga.update');
 
+Route::post('/warga/{uid}/reset-pin', [DashboardController::class, 'resetPin'])
+    ->middleware(['auth', 'verified'])
+    ->name('warga.reset-pin');
+
 Route::delete('/warga/{uid}', [DashboardController::class, 'destroyWarga'])
     ->middleware(['auth', 'verified'])
     ->name('warga.destroy');

@@ -154,7 +154,6 @@ class DashboardController extends Controller
             'uid_kartu' => 'required',
             'nama'      => 'required|string|max:255',
             'alamat'    => 'required|string',
-            'pin'       => 'required|string|min:4|max:4',
             'jatah_ini' => 'required|numeric|min:0.1',
             'status'    => 'required|string|in:Aktif,Nonaktif',
         ]);
@@ -205,6 +204,23 @@ class DashboardController extends Controller
         $this->syncWargaToFirebase($validated['uid_kartu'], $dataUpdate);
 
         return redirect()->back();
+    }
+
+
+    /**
+     * Reset PIN warga ke default "0000" (untuk kasus lupa PIN)
+     * Warga akan dipaksa membuat PIN baru saat scan KTP berikutnya via ESP32
+     */
+    public function resetPin(string $uid)
+    {
+        $warga = Warga::findOrFail($uid);
+        $warga->pin = '0000';
+        $warga->save();
+
+        // Sync ke Firebase agar ESP32 baca PIN="0000" dan paksa ganti
+        $this->syncWargaToFirebase($uid, ['pin' => '0000']);
+
+        return redirect()->back()->with('success', 'PIN warga berhasil direset.');
     }
 
     public function destroyWarga(string $uid)

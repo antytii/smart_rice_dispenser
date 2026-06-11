@@ -125,7 +125,6 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
         uid_kartu: '',
         nama: '',
         alamat: '',
-        pin: '',
         jatah_ini: 10,
         status: 'Aktif'
     });
@@ -138,7 +137,7 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
             uid_kartu: '',
             nama: '',
             alamat: '',
-            pin: '',
+            pin: '0000',
             jatah_ini: 10,
             status: 'Aktif'
         });
@@ -152,7 +151,6 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
             uid_kartu: w.uid_kartu,
             nama: w.nama,
             alamat: w.alamat || '',
-            pin: w.pin || '',
             jatah_ini: w.jatah_bulanan ?? w.jatah_ini ?? 10,
             status: w.status
         });
@@ -413,12 +411,61 @@ export default function DataWarga({ auth, warga = [], perangkat: initialPerangka
                                     {errors.alamat && <div className="invalid-feedback">{errors.alamat}</div>}
                                 </div>
 
-                                <div className="col-md-4">
-                                    <label htmlFor="pin" className="form-label">PIN (4 Digit)</label>
-                                    <input type="text" className={`form-control ${errors.pin ? 'is-invalid' : ''}`} id="pin" maxLength="4" 
-                                           value={data.pin} onChange={e => setData('pin', e.target.value.replace(/\D/g, ''))} required />
-                                    {errors.pin && <div className="invalid-feedback">{errors.pin}</div>}
-                                </div>
+
+                 {/* PIN: input saat Tambah Warga, tombol Reset saat Edit Warga */}
+                 <div className="col-md-4">
+                     {!editingUid ? (
+                         <>
+                             <label htmlFor="pin" className="form-label">PIN Awal (4 Digit)</label>
+                             <input type="text" className={`form-control ${errors.pin ? 'is-invalid' : ''}`} id="pin" maxLength="4"
+                                 placeholder="Misal: 1234"
+                                 value={data.pin} onChange={e => setData('pin', e.target.value.replace(/\D/g, ''))} required />
+                             {errors.pin && <div className="invalid-feedback">{errors.pin}</div>}
+                         </>
+                     ) : (
+                         <>
+                             <label className="form-label">PIN Warga</label>
+                             <div>
+                                 <button type="button" className="btn btn-warning w-100"
+                                     onClick={() => {
+                                         Swal.fire({
+                                             title: 'Reset PIN Warga?',
+                                             text: 'PIN akan direset ke "0000". Warga wajib buat PIN baru saat scan KTP berikutnya.',
+                                             icon: 'warning',
+                                             showCancelButton: true,
+                                             confirmButtonColor: '#f0ad4e',
+                                             cancelButtonColor: '#6c757d',
+                                             confirmButtonText: 'Ya, Reset!',
+                                             cancelButtonText: 'Batal'
+                                         }).then((result) => {
+                                             if (result.isConfirmed) {
+                                                 router.post(route('warga.reset-pin', editingUid), {}, {
+                                                     onSuccess: () => {
+                                                         Swal.fire({
+                                                             icon: 'success',
+                                                             title: 'PIN Direset!',
+                                                             text: 'PIN berhasil direset ke "0000". Warga wajib ganti PIN lewat mesin.',
+                                                             toast: true,
+                                                             position: 'top-end',
+                                                             showConfirmButton: false,
+                                                             timer: 4000
+                                                         });
+                                                     },
+                                                     onError: () => {
+                                                         Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Gagal mereset PIN. Coba lagi.' });
+                                                     }
+                                                 });
+                                             }
+                                         });
+                                     }}
+                                 >
+                                     🔑 Reset PIN ke Default
+                                 </button>
+                                 <small className="text-muted d-block mt-1">Reset ke "0000". Warga wajib buat PIN baru via mesin.</small>
+                             </div>
+                         </>
+                     )}
+                 </div>
 
                                 <div className="col-md-4">
                                      <label htmlFor="jatah_ini" className="form-label">Kuota/Bulan (kg)</label>
