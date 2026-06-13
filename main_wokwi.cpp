@@ -287,6 +287,15 @@ void loop() {
 // ==========================================
   // LANJUT KE PROSES VALIDASI PIN
   // ==========================================
+  // Update status ke "Dispensing" agar dashboard tahu alat sedang digunakan
+  {
+    FirebaseJson jsonBusy;
+    jsonBusy.add("status_alat", "Dispensing");
+    jsonBusy.set("last_ping/.sv", "timestamp");
+    Firebase.RTDB.updateNode(&fbDo, "/perangkats/" + ID_ALAT, &jsonBusy);
+    lastHeartbeatTime = millis(); // Reset timer heartbeat
+  }
+
   // Validasi Teks Layar
   lcd.clear();
   lcd.print("Halo, Penerima:");
@@ -481,6 +490,15 @@ void loop() {
     lcd.setCursor(0, 1);
     lcd.print(String(beratSekarang, 2) + " / " + String(totalTargetBeras) + "kg   ");
 
+    // Heartbeat selama menimbang agar tidak dianggap Offline
+    if (millis() - lastHeartbeatTime >= HEARTBEAT_INTERVAL) {
+      lastHeartbeatTime = millis();
+      FirebaseJson hb;
+      hb.add("status_alat", "Dispensing");
+      hb.set("last_ping/.sv", "timestamp");
+      Firebase.RTDB.updateNode(&fbDo, "/perangkats/" + ID_ALAT, &hb);
+    }
+
     if (millis() - batasWaktuMulai > 60000) {
       statusSukses = false;
       break;
@@ -562,6 +580,15 @@ String proresInputPIN() {
       }
     }
     
+    // Heartbeat selama menunggu input PIN agar tidak dianggap Offline
+    if (millis() - lastHeartbeatTime >= HEARTBEAT_INTERVAL) {
+      lastHeartbeatTime = millis();
+      FirebaseJson hb;
+      hb.add("status_alat", "Dispensing");
+      hb.set("last_ping/.sv", "timestamp");
+      Firebase.RTDB.updateNode(&fbDo, "/perangkats/" + ID_ALAT, &hb);
+    }
+
     // WAJIB DITAMBAHKAN: Memberi napas pada ESP32 agar tidak freeze
     delay(10); 
   }

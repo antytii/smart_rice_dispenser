@@ -53,8 +53,8 @@ export function useRealtimePerangkat(initialPerangkat = []) {
             if (item.last_ping) {
                 const lastPing = new Date(item.last_ping);
                 const now = new Date();
-                // Jika last ping > 30 detik lalu, ubah ke Offline secara real-time
-                if ((now - lastPing) / 1000 >= 6) {
+                // Jika last ping > 6 detik lalu, ubah ke Offline (kecuali sedang Dispensing)
+                if ((now - lastPing) / 1000 >= 6 && status !== 'Dispensing') {
                     status = 'Offline';
                 }
             }

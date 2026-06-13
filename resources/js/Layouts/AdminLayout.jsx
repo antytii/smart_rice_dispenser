@@ -44,10 +44,10 @@ export default function AdminLayout({ children, title, activePage, perangkat = [
                 </nav>
 
                 <div className="sidebar-status">
-                    <span className="status-dot" style={{ backgroundColor: statusMesin === 'Online' ? '#22c55e' : '#ef4444', boxShadow: statusMesin === 'Online' ? '0 0 0 6px rgba(34, 197, 94, 0.16)' : '0 0 0 6px rgba(239, 68, 68, 0.16)' }}></span>
+                    <span className="status-dot" style={{ backgroundColor: statusMesin === 'Online' ? '#22c55e' : statusMesin === 'Dispensing' ? '#f59e0b' : '#ef4444', boxShadow: statusMesin === 'Online' ? '0 0 0 6px rgba(34, 197, 94, 0.16)' : statusMesin === 'Dispensing' ? '0 0 0 6px rgba(245, 158, 11, 0.16)' : '0 0 0 6px rgba(239, 68, 68, 0.16)' }}></span>
                     <div className="d-flex flex-column">
-                        <strong>Mesin {statusMesin}</strong>
-                        <small>ESP32 {statusMesin === 'Online' ? 'tersinkron' : 'terputus'}</small>
+                        <strong>Mesin {statusMesin === 'Dispensing' ? 'Aktif' : statusMesin}</strong>
+                        <small>ESP32 {statusMesin === 'Online' ? 'tersinkron' : statusMesin === 'Dispensing' ? 'sedang digunakan' : 'terputus'}</small>
                     </div>
                 </div>
 
