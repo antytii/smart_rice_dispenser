@@ -76,7 +76,7 @@ std::map<String, unsigned long> blockedCards;
 
 // Variable global untuk heartbeat berkala
 unsigned long lastHeartbeatTime = 0;
-const unsigned long HEARTBEAT_INTERVAL = 5000; // 5 detik
+const unsigned long HEARTBEAT_INTERVAL = 2000; // 5 detik
 
 // =========================================================================
 // POLA BUNYI STANDAR

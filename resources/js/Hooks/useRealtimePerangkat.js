@@ -42,7 +42,7 @@ export function useRealtimePerangkat(initialPerangkat = []) {
     React.useEffect(() => {
         const interval = setInterval(() => {
             setTick(t => t + 1);
-        }, 3000);
+        }, 2000);
         return () => clearInterval(interval);
     }, []);
 
@@ -54,7 +54,7 @@ export function useRealtimePerangkat(initialPerangkat = []) {
                 const lastPing = new Date(item.last_ping);
                 const now = new Date();
                 // Jika last ping > 30 detik lalu, ubah ke Offline secara real-time
-                if ((now - lastPing) / 1000 >= 30) {
+                if ((now - lastPing) / 1000 >= 6) {
                     status = 'Offline';
                 }
             }
