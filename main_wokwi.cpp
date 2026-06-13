@@ -724,7 +724,7 @@ void loop() {
     for (int i = 0; i < jumlahBulanDiambil; i++) {
       FirebaseJson updateJatah;
       updateJatah.add("status", "Sudah Diambil");
-      updateJatah.add("diambil_pada", "2026-05-24T15:00:00Z"); 
+      updateJatah.set("diambil_pada/.sv", "timestamp"); // Gunakan waktu server Firebase
       Firebase.RTDB.updateNode(&fbDo, pathJatah + "/" + arrayBulanUpdate[i], &updateJatah);
     }
 
@@ -734,7 +734,7 @@ void loop() {
     jsonTx.add("nik", nikWarga);
     jsonTx.add("jumlah_diambil", beratSekarang);
     jsonTx.add("keterangan", "Ambil rapel bulan: " + teksBulanLCD);
-    jsonTx.add("created_at", "2026-05-24T15:00:00Z");
+    jsonTx.set("created_at/.sv", "timestamp"); // Gunakan waktu server Firebase
     Firebase.RTDB.pushJSON(&fbDo, "/transaksis", &jsonTx);
 
     // C. Update stok alat
